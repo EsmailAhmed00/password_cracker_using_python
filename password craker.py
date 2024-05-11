@@ -1,28 +1,31 @@
-from scapy.all import sniff
+import hashlib
 
-def packet_callback(packet):
-    if packet.haslayer('IP'):
-        src_ip = packet['IP'].src
-        dst_ip = packet['IP'].dst
-        
-        if packet.haslayer('TCP'):
-            src_port = packet['TCP'].sport
-            dst_port = packet['TCP'].dport
-            protocol = 'TCP'
-        elif packet.haslayer('UDP'):
-            src_port = packet['UDP'].sport
-            dst_port = packet['UDP'].dport
-            protocol = 'UDP'
-        else:
-            src_port = 'N/A'
-            dst_port = 'N/A'
-            protocol = 'N/A'
-        
-        print(f"Source IP: {src_ip}, Source Port: {src_port}, Destination IP: {dst_ip}, Destination Port: {dst_port}, Protocol: {protocol}")
+def load_hashes(hash_file):
+    with open(hash_file, 'r') as file:
+        return [line.strip() for line in file]  #lstrip() && rstrip()
 
-def start_sniffing(interface):
-    sniff(iface=interface, prn=packet_callback, store=0)
+def load_dictionary(dict_file):
+    with open(dict_file, 'r') as file:
+        return [line.strip() for line in file]  #lstrip && rstrip
 
-def main():
-    interface = 'eth0'  # Change this to your network interface
-    start_sniffing(interface)
+def crack_passwords(hash_file, dict_file):
+    hashes = load_hashes(hash_file)          #load file in to hashes
+    passwords = load_dictionary(dict_file)   #load dict in to passwords
+    
+    cracked_passwords = {}                    #empty dictionary
+    
+    for password in passwords:
+        for hash_str in hashes:
+            if hashlib.md5(password.encode()).hexdigest() == hash_str: # encoding
+                cracked_passwords[hash_str] = password
+    
+    return cracked_passwords
+
+
+hash_file = input("enter the 'hashes.txt'     ")
+dict_file = input("enter the 'dictionary.txt' ")
+    
+cracked_passwords = crack_passwords(hash_file, dict_file)
+    
+for hash_str, password in cracked_passwords.items():
+    print(f"Cracked Password for Hash '{hash_str}': {password}")
